@@ -61,6 +61,13 @@ namespace QuestsBot.Services
                             await HandleUnmetPrecondition(context, result.ErrorReason);
                             break;
                         default:
+                            await _logger.LogAsync(
+                                new LogMessage(
+                                    LogSeverity.Error,
+                                    nameof(HandleInteraction),
+                                    $"Command execution failed: {result.ErrorReason}"
+                                )
+                            );
                             break;
                     }
             }
@@ -73,14 +80,14 @@ namespace QuestsBot.Services
             }
         }
 
-        private Task HandleInteractionExecute(ICommandInfo commandInfo, IInteractionContext context, IResult result)
+        private async Task HandleInteractionExecute(ICommandInfo commandInfo, IInteractionContext context, IResult result)
         {
             if (!result.IsSuccess)
             {
                 switch (result.Error)
                 {
                     case InteractionCommandError.UnmetPrecondition:
-                        HandleUnmetPrecondition(context, result.ErrorReason);
+                        await HandleUnmetPrecondition(context, result.ErrorReason);
                         break;
                     default:
                         break;
@@ -92,7 +99,7 @@ namespace QuestsBot.Services
                 string location = context.Interaction.IsDMInteraction ? "DM" : $"{context.Guild.Name} ({context.Guild.Id})";
                 int executionTime = (DateTime.Now - context.Interaction.CreatedAt).Milliseconds;
 
-                _logger.LogAsync(
+                await _logger.LogAsync(
                     new LogMessage(
                         LogSeverity.Info,
                         "InteractionHandler",
@@ -100,20 +107,17 @@ namespace QuestsBot.Services
                     )
                 );
             }
-
-            return Task.CompletedTask;
         }
 
-        private Task HandleUnmetPrecondition(IInteractionContext context, string errorReason)
+        private async Task HandleUnmetPrecondition(IInteractionContext context, string errorReason)
         {
-            _logger.LogAsync(
+            await _logger.LogAsync(
                 new LogMessage(
                     LogSeverity.Warning,
                     "InteractionHandler",
                     $"Precondition failed for {context.Interaction.Type} command. {errorReason}"
                 )
             );
-            return Task.CompletedTask;
         }
     }
 }
